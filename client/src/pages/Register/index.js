@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
 import { FormGroup, Input, Label, Small, FormBtn } from "../../components/Form";
+import { Container } from "../../components/Grid";
 import API from "../../utils/API";
 import "./style.css";
 
@@ -27,12 +28,18 @@ class Register extends Component {
         if (value.length > 7) {
           API.availableUN(value.toLowerCase())
             .then(res => {
-              res.data.length < 1
-                ? this.setState({ validUN: true })
-                : this.setState({ validUN: false });
+              if (res.data.errors) {
+                console.log(res.data.errors);
+                this.setState({error: "An error occured."});
+              } else {
+                res.data.length < 1
+                  ? this.setState({ validUN: true })
+                  : this.setState({ validUN: false });
+              };
             })
             .catch(err => {
               console.log(err);
+              this.setState({error: "An error occured."})
             });
         } else {
           this.setState({ validUN: false });
@@ -56,21 +63,39 @@ class Register extends Component {
     }
   };
 
+  login = (userInfo) => {
+    API.login(userInfo)
+      .then(res => {
+        if (res.status && res.status === 200 && !res.data.errors) {
+          console.log("login successful")
+          this.props.isAuthorized();
+        } else {
+          window.location.href = "/";
+        }
+      })
+      .catch(err => {
+        console.log(err);
+        window.location.href = "/";
+      });
+  };
+
   register = event => {
     event.preventDefault();
-    API.register({
+    let userInfo = {
       username: this.state.username.toLowerCase(),
       email: this.state.email,
       password: this.state.password
-    })
+    };
+    API.register(userInfo)
       .then(res => {
-        if (res.data.message) {
+        if (res.data.errors) {
+          console.log(res.data.errors);
           this.setState({
-            error: res.data.message
+            error: "An error has occured."
           });
         } else {
           console.log("registration successful");
-          this.props.isAuthorized();
+          this.login(userInfo);
         }
       })
       .catch(err => {
@@ -94,50 +119,50 @@ class Register extends Component {
 
   render() {
     return (
-      <div className="container registerContainer">
+      <Container classes="registerContainer">
         <form>
-        <FormGroup>
-          <Label text="Username" />
-          <Input
-            name="username"
-            value={this.state.username}
-            onChange={this.handleInputChange}
-            placeholder="at least 8 characters"
-            type="text"
-          />
-          {this.state.validUN ? <Small text="Username is available" /> : <Small text="Username is not available" />}
+          <FormGroup>
+            <Label text="Username" />
+            <Input
+              name="username"
+              value={this.state.username}
+              onChange={this.handleInputChange}
+              placeholder="at least 8 characters"
+              type="text"
+            />
+            {this.state.validUN ? <Small text="Username is available" /> : <Small text="Username is not available" />}
           </FormGroup>
           <FormGroup>
-          <Label text="Email" />
-          <Input
-            name="email"
-            value={this.state.email}
-            onChange={this.handleInputChange}
-            placeholder="Email"
-            type="email"
-          />
-          {this.state.validEM ? <Small text="Email is valid" /> : <Small text="Email is invalid" />}
+            <Label text="Email" />
+            <Input
+              name="email"
+              value={this.state.email}
+              onChange={this.handleInputChange}
+              placeholder="Email"
+              type="email"
+            />
+            {this.state.validEM ? <Small text="Email is valid" /> : <Small text="Email is invalid" />}
           </FormGroup>
           <FormGroup>
-          <Label text="Password" />
-          <Input
-            name="password"
-            value={this.state.password}
-            onChange={this.handleInputChange}
-            placeholder="at least 8 characters"
-            type="password"
-          />
-          {this.state.validPW ? <Small text="Password is valid" /> : <Small text="Password must be at least 8 characters" />}
+            <Label text="Password" />
+            <Input
+              name="password"
+              value={this.state.password}
+              onChange={this.handleInputChange}
+              placeholder="at least 8 characters"
+              type="password"
+            />
+            {this.state.validPW ? <Small text="Password is valid" /> : <Small text="Password must be at least 8 characters" />}
           </FormGroup>
           <FormGroup>
-          <Label text="Confirm Password" />
-          <Input
-            name="confirm"
-            value={this.state.confirm}
-            onChange={this.handleInputChange}
-            type="password"
-          />
-          {this.state.validCF ? <Small text="Passwords match" /> : <Small text="Passwords don't match" />}
+            <Label text="Confirm Password" />
+            <Input
+              name="confirm"
+              value={this.state.confirm}
+              onChange={this.handleInputChange}
+              type="password"
+            />
+            {this.state.validCF ? <Small text="Passwords match" /> : <Small text="Passwords don't match" />}
           </FormGroup>
           {this.state.error ? <Small text={this.state.error} /> : ""}
 
@@ -155,7 +180,7 @@ class Register extends Component {
             <Link to="/login">Already registered? Click here.</Link>
           </FormGroup>
         </form>
-      </div>
+      </Container>
     );
   }
 }
